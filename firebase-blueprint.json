@@ -1,0 +1,55 @@
+{
+  "entities": {
+    "User": {
+      "title": "Perfil do Usuário",
+      "description": "Informações sobre o usuário e seu plano de assinatura.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "Email do usuário" },
+        "displayName": { "type": "string", "description": "Nome de exibição" },
+        "photoURL": { "type": "string", "description": "URL da foto de perfil" },
+        "plan": { "type": "string", "enum": ["free", "pro", "business"], "description": "Tipo de plano de assinatura" },
+        "generationsLeft": { "type": "number", "description": "Gerações restantes para o dia" },
+        "totalGenerations": { "type": "number", "description": "Total histórico de gerações" },
+        "usageStats": { "type": "object", "description": "Estatísticas de uso por ferramenta" },
+        "lastGenerationDate": { "type": "string", "format": "date-time", "description": "Timestamp da última geração para reset de limite" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação da conta" }
+      },
+      "required": ["uid", "email", "plan"]
+    },
+    "GenerationLog": {
+      "title": "Log de Geração IA",
+      "description": "Registros de cada geração feita pelo usuário.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "UID do usuário" },
+        "toolId": { "type": "string", "description": "ID da ferramenta usada" },
+        "toolType": { "type": "string", "description": "Categoria/Modo da ferramenta" },
+        "prompt": { "type": "string", "description": "Input do usuário" },
+        "result": { "type": "string", "description": "Conteúdo gerado pela IA" },
+        "agentId": { "type": "string", "description": "ID do agente especialista usado (opcional)" },
+        "score": {
+          "type": "object",
+          "properties": {
+            "quality": { "type": "number" },
+            "profitPotential": { "type": "number" },
+            "riskLevel": { "type": "number" }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação" }
+      },
+      "required": ["uid", "toolId", "prompt", "result", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile and usage stats."
+    },
+    "/generations/{genId}": {
+      "schema": "GenerationLog",
+      "description": "Individual generation history items."
+    }
+  }
+}

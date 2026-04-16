@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId} (Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - email: string (required) - User's private email (PII)
+    //   - displayName: string (optional) - Public name
+    //   - photoURL: string (optional) - Profile pic
+    //   - plan: string (required) - ["free", "pro", "business"]
+    //   - generationsLeft: number - Daily limit counter
+    //   - totalGenerations: number - Global counter
+    //   - usageStats: map - Counter per tool { toolId: count }
+    //   - lastGenerationDate: string (ISO 8601)
+    //   - createdAt: string (ISO 8601)
+    //
+    // Collection: generations
+    // Document ID: {genId} (Random ID)
+    // Fields:
+    //   - uid: string (required) - Owner UID
+    //   - toolId: string (required)
+    //   - toolType: string
+    //   - prompt: string (required)
+    //   - result: string (required)
+    //   - agentId: string (optional)
+    //   - score: map (optional) { quality, profitPotential, riskLevel }
+    //   - createdAt: string (required, ISO 8601)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.plan == 'business' ||
+         (request.auth.token.email == "netfixa07@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'plan']) &&
+             data.uid is string &&
+             data.email is string &&
+             data.plan in ['free', 'pro', 'business'] &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() < 100)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() < 1000));
+    }
+
+    function isValidGeneration(data) {
+      return data.keys().hasAll(['uid', 'toolId', 'prompt', 'result', 'createdAt']) &&
+             data.uid is string &&
+             data.uid == request.auth.uid &&
+             data.toolId is string &&
+             data.prompt is string && data.prompt.size() < 5000 &&
+             data.result is string && data.result.size() < 50000 &&
+             data.createdAt is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // User Profile Rules
+    match /users/{userId} {
+      // PII Protection: Only owners can read their own profile
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Validation on create/update
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
+                       request.resource.data.plan == resource.data.plan) || isAdmin();
+    }
+
+    // Generation History Rules
+    match /generations/{genId} {
+      // Content is personal: Only owners or admins can see logs
+      allow read: if isAuthenticated() && (resource.data.uid == request.auth.uid || isAdmin());
+      
+      allow create: if isAuthenticated() && isValidGeneration(request.resource.data);
+      
+      // Logs are immutable for users
+      allow update, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
