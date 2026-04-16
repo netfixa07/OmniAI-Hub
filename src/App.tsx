@@ -75,6 +75,8 @@ export default function App() {
   const [activeWorkflow, setActiveWorkflow] = useState<Workflow | null>(null);
   const [currentWorkflowStep, setCurrentWorkflowStep] = useState(0);
 
+  const [loginError, setLoginError] = useState<string | null>(null);
+
   const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
     const errInfo = {
       error: error instanceof Error ? error.message : String(error),
@@ -176,11 +178,19 @@ export default function App() {
 
   const handleLogin = async () => {
     setIsLoading(true);
+    setLoginError(null);
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login failed:", error);
+      if (error?.code === 'auth/unauthorized-domain') {
+        setLoginError("Domínio não autorizado. Acesse o console do Firebase (Authentication > Settings > Authorized domains) e adicione o domínio atual da URL. Se estiver no preview, tente abrir em uma nova guia.");
+      } else if (error?.code === 'auth/popup-blocked' || error?.message?.includes("Cross-Origin")) {
+        setLoginError("Login bloqueado pelo navegador. Abra o app em uma NOVA GUIA e tente novamente.");
+      } else {
+        setLoginError(`Falha ao conectar: ${error?.message || error.toString()}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -261,7 +271,7 @@ export default function App() {
   }
 
   if (!user) {
-    return <LoginScreen onLogin={handleLogin} isLoading={isLoading} />;
+    return <LoginScreen onLogin={handleLogin} isLoading={isLoading} error={loginError} />;
   }
 
   return (

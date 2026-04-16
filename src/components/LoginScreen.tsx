@@ -6,9 +6,10 @@ import { cn } from '../lib/utils';
 interface LoginScreenProps {
   onLogin: () => void;
   isLoading: boolean;
+  error?: string | null;
 }
 
-export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
+export function LoginScreen({ onLogin, isLoading, error }: LoginScreenProps) {
   return (
     <div className="min-h-screen bg-dashboard-bg flex items-center justify-center p-4 overflow-hidden relative">
       {/* Background blobs */}
@@ -31,6 +32,12 @@ export function LoginScreen({ onLogin, isLoading }: LoginScreenProps) {
           </div>
 
           <div className="space-y-4">
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-4 rounded-xl font-medium text-center">
+                {error}
+              </div>
+            )}
+            
             <button
               onClick={onLogin}
               disabled={isLoading}
