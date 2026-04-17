@@ -38,6 +38,20 @@ import {
 import { Tool, AIAgent, Workflow } from './types';
 
 export const TOOLS: Tool[] = [
+  // MISSION MODE
+  {
+    id: 'mission_mode',
+    name: 'Modo Missão Supreme',
+    description: 'Decomposição estratégica (30/60/90 dias) de metas audaciosas.',
+    icon: <Target className="w-5 h-5" />,
+    category: 'think',
+    promptTemplate: (input) => `Inicie o MODO MISSÃO para o objetivo: "${input}". 
+Crie:
+1. Visão Geral Executiva
+2. Simulação Financeira / Tempo de Retorno
+3. Plano Tático 30-60-90 dias (Passos acionáveis de Múltiplos Agentes)
+4. Riscos Críticos e Mitigações.`
+  },
   // MONEY MODE
   {
     id: 'profit_ideas',
@@ -271,44 +285,52 @@ export const TOOLS: Tool[] = [
 export const CATEGORIES = [
   { id: 'all', name: 'Dashboard', icon: <Sparkles className="w-4 h-4" /> },
   { id: 'money', name: 'Money Mode', icon: <DollarSign className="w-4 h-4" /> },
-  { id: 'viral', name: 'Viral Mode', icon: <TrendingUp className="w-4 h-4" /> },
-  { id: 'automation', name: 'Automação', icon: <Cpu className="w-4 h-4" /> },
-  { id: 'think', name: 'Think Labs', icon: <Brain className="w-4 h-4" /> },
-  { id: 'work', name: 'Work Center', icon: <Briefcase className="w-4 h-4" /> },
+  { id: 'viral', name: 'Viral Mode', icon: <Flame className="w-4 h-4" /> },
+  { id: 'automation', name: 'Automation Mode', icon: <Cpu className="w-4 h-4" /> },
+  { id: 'think', name: 'Think Mode', icon: <Brain className="w-4 h-4" /> },
+  { id: 'work', name: 'Work Mode', icon: <Briefcase className="w-4 h-4" /> },
 ];
 
 export const AGENTS: AIAgent[] = [
   {
-    id: 'mentor_biz',
-    name: 'Marcus',
-    role: 'Mentor de Negócios',
-    description: 'Especialista em escala e lucratividade.',
+    id: 'ceo_ai',
+    name: 'CEO AI',
+    role: 'Estrategista Chefe',
+    description: 'Focado em escalabilidade, MVP e ROI.',
     avatar: 'https://picsum.photos/seed/biz/200/200',
-    systemInstruction: 'Você é Marcus, um mentor de negócios focado em ROI e escalabilidade. Suas respostas são diretas, pragmáticas e focadas em dados.'
+    systemInstruction: 'Você é o CEO AI. Suas respostas são diretas, pragmáticas e focadas em escalabilidade, unit economics e ROI. Você cobra execução rápida.'
   },
   {
-    id: 'marketing_pro',
-    name: 'Sophia',
-    role: 'Estrategista de Marketing',
-    description: 'Expert em tráfego e posicionamento.',
+    id: 'marketing_ai',
+    name: 'Marketing AI',
+    role: 'Growth & Aquisição',
+    description: 'Expert em viralidade.',
     avatar: 'https://picsum.photos/seed/marketing/200/200',
-    systemInstruction: 'Você é Sophia, especialista em marketing digital e branding. Seu foco é como atrair e converter o público certo de forma criativa.'
+    systemInstruction: 'Você é a Marketing AI. Especialista em growth hacking e branding. Seu foco é dominar as métricas de CAC, LTV e criar campanhas impossíveis de ignorar.'
   },
   {
-    id: 'copy_writer',
-    name: 'Elias',
-    role: 'Copywriter Sênior',
-    description: 'Focado em conversão e persuasão.',
+    id: 'copywriter_ai',
+    name: 'Copywriter AI',
+    role: 'Persuasão & Vendas',
+    description: 'Mestre em ganchos mentais.',
     avatar: 'https://picsum.photos/seed/copy/200/200',
-    systemInstruction: 'Você é Elias, um mestre da persuasão. Suas respostas usam gatilhos mentais e estruturas de vendas comprovadas.'
+    systemInstruction: 'Você é o Copywriter AI. Um mestre da hipnose conversacional. Suas respostas usam estruturas comprovadas de vendas, quebras de padrão e ganchos de retenção absolutos.'
   },
   {
-    id: 'analista_fin',
-    name: 'Arthur',
-    role: 'Analista Financeiro',
-    description: 'Cálculos precisos e análise de risco.',
+    id: 'analyst_ai',
+    name: 'Analyst AI',
+    role: 'Dados & Risco',
+    description: 'Cálculos duros e precisos.',
     avatar: 'https://picsum.photos/seed/fin/200/200',
-    systemInstruction: 'Você é Arthur, um analista financeiro rigoroso. Você foca em custos, margens de lucro e mitigação de riscos.'
+    systemInstruction: 'Você é o Analyst AI. Um analista rigoroso focado na realidade dos números. Você protege a operação avaliando cash flow e mitigações de risco.'
+  },
+  {
+    id: 'builder_ai',
+    name: 'Builder AI',
+    role: 'Execução & Tech',
+    description: 'Automatizações e infra.',
+    avatar: 'https://picsum.photos/seed/tech/200/200',
+    systemInstruction: 'Você é o Builder AI. O arquiteto técnico e executor implacável. Resolve gargalos com automação (Make/Zapier) e constrói de forma lean.'
   }
 ];
 

@@ -24,6 +24,7 @@ export function GenerationModal({ tool, onClose, onGenerate, onSave, isGeneratin
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [thinkingState, setThinkingState] = useState('');
 
   // Auto-set result if tool has predefined content or if viewing from history
   React.useEffect(() => {
@@ -63,14 +64,38 @@ Algoritmos de precificação dinâmica e análise de sentimento dominarão o e-c
   const handleGenerate = async () => {
     if (!input.trim() || isGenerating || !canGenerate) return;
     setError(null);
+    setThinkingState('Iniciando Orchestrator Supreme...');
+    
+    // Simular passos do pensamento do "Brain"
+    const steps = [
+      "Analisando métricas de negócio e intenção oculta...",
+      "Quebrando problema em tarefas acionáveis...",
+      "Convocando Sistema de Multi-Agentes...",
+      "CEO AI debatendo estratégia com Analyst AI...",
+      "Consolidando plano com Marketing AI...",
+      "Gerando documentação final através do Builder AI..."
+    ];
+    
+    let stepIndex = 0;
+    const interval = setInterval(() => {
+      if (stepIndex < steps.length) {
+        setThinkingState(steps[stepIndex]);
+        stepIndex++;
+      }
+    }, 1500);
+
     try {
       const prompt = tool.promptTemplate(input);
       const res = await onGenerate(prompt, selectedAgentId);
+      clearInterval(interval);
       setResult(res.content);
       setScore(res.score);
       onSave(input, res.content, res.score, selectedAgentId);
     } catch (e) {
+      clearInterval(interval);
       setError("Ocorreu um erro ao gerar. Tente novamente.");
+    } finally {
+      clearInterval(interval);
     }
   };
 
@@ -213,27 +238,38 @@ Algoritmos de precificação dinâmica e análise de sentimento dominarão o e-c
                 disabled={!input.trim() || isGenerating || !canGenerate}
                 onClick={handleGenerate}
                 className={cn(
-                  "w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg",
+                  "w-full py-4 rounded-xl font-bold flex flex-col items-center justify-center gap-1 transition-all shadow-lg",
                   input.trim() && !isGenerating && canGenerate
                     ? "bg-linear-to-r from-brand-primary to-brand-secondary text-white hover:opacity-90 active:scale-95 shadow-brand-primary/20"
-                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+                    : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
+                  isGenerating && "py-6"
                 )}
               >
                 {isGenerating ? (
                   <>
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    <div className="flex items-center gap-3">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                      >
+                        <Sparkles className="w-5 h-5 text-zinc-100" />
+                      </motion.div>
+                      <span className="text-white text-base">Orchestrator Trabalhando...</span>
+                    </div>
+                    <motion.p 
+                      key={thinkingState}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-xs text-zinc-300 font-medium mt-1 font-mono text-center"
                     >
-                      <Sparkles className="w-5 h-5" />
-                    </motion.div>
-                    Gerando conteúdo...
+                      {thinkingState}
+                    </motion.p>
                   </>
                 ) : (
-                  <>
+                  <div className="flex items-center gap-2">
                     <Send className="w-5 h-5" />
-                    Gerar agora
-                  </>
+                    EXECUTAR ORCHESTRATOR
+                  </div>
                 )}
               </button>
               <p className="text-center text-[10px] text-zinc-600 mt-4 uppercase tracking-[0.2em] font-bold">

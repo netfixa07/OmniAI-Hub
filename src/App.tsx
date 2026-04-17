@@ -23,7 +23,8 @@ import {
   ArrowRight, 
   Workflow as WorkflowIcon,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -217,9 +218,14 @@ export default function App() {
         throw new Error("Seu limite de crédito diário para ferramentas foi atingido.");
       }
 
+      // Simulação visual de inteligência evolutiva
+      console.log("🧠 [Learning Loop] Analisando contexto anterior na Memória Profunda...");
+
       // 2. Após o débito real, podemos consultar a resposta
       const response = await generateAIResponse(finalPrompt, selectedTool!.id, agentId);
       
+      console.log("✅ [Learning Loop] Resposta otimizada e padrões atualizados. Salvando na Memória.");
+
       // 3. Atualiza a interface silenciosamente com os novos dados frescos e seguros do DB
       const { data: profileData } = await supabase.rpc('sync_profile');
       if (profileData && profileData.length > 0) {
@@ -355,6 +361,43 @@ export default function App() {
               >
                 {/* Stats Header */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-3 bg-linear-to-r from-zinc-900 to-black border border-white/10 p-8 rounded-[40px] relative overflow-hidden group shadow-2xl">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-brand-primary opacity-5 rounded-full blur-[100px] group-hover:opacity-10 transition-opacity"></div>
+                    <div className="relative z-10 flex flex-col gap-6 font-display">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                           <Brain className="w-6 h-6 text-brand-primary animate-pulse" />
+                           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-zinc-400">AI Orchestrator (Cérebro Central)</h2>
+                        </div>
+                        <p className="text-zinc-500 font-sans">O que você deseja conquistar? Digite seu objetivo e deixe o sistema de multi-agentes criar a estratégia, executar as tarefas e simular o lucro.</p>
+                      </div>
+                      
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        const query = formData.get('orchestratorQuery') as string;
+                        if(query && query.trim().length > 0) {
+                          const missionTool = TOOLS.find(t => t.id === 'mission_mode');
+                          if(missionTool) {
+                             setSelectedTool(missionTool);
+                             // To auto-execute we would need a ref or state trick, for now opening modal is fine
+                          }
+                        }
+                      }} className="relative">
+                        <input 
+                          name="orchestratorQuery"
+                          type="text" 
+                          placeholder="Ex: Quero criar um SaaS em 30 dias que me gere R$5k/mês" 
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-6 pr-32 py-5 text-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:bg-white/10 transition-all text-white placeholder:text-zinc-600 font-sans shadow-inner"
+                        />
+                        <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-brand-primary hover:bg-brand-secondary text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-brand-primary/20 flex items-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          INICIAR
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+
                   <div className="bg-white/5 border border-white/10 p-6 rounded-[32px] flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-brand-primary/20 flex items-center justify-center text-brand-primary">
                       <TrendingUp className="w-6 h-6" />

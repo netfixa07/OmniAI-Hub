@@ -25,10 +25,13 @@ export function Sidebar({
     <aside className="w-64 border-r border-card-border bg-dashboard-bg flex flex-col h-screen sticky top-0 overflow-y-auto">
       <div className="p-6">
         <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-brand-primary to-brand-secondary flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-brand-primary to-brand-secondary flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.5)]">
             <Layout className="text-white w-5 h-5" />
           </div>
-          <h1 className="font-display font-bold text-xl tracking-tight">OmniAI OS</h1>
+          <div>
+            <h1 className="font-display font-bold text-lg tracking-tight leading-none">OmniAI OS</h1>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-secondary">Supreme Edition</span>
+          </div>
         </div>
 
         <nav className="space-y-1">

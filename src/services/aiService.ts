@@ -1,32 +1,50 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { AGENTS } from "../constants";
 
-const apiKey = process.env.GEMINI_API_KEY || "";
-const ai = new GoogleGenAI({ apiKey });
+let aiClient: GoogleGenAI | null = null;
+
+function getAIClient() {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY || "";
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export async function generateAIResponse(prompt: string, toolId: string, agentId?: string) {
   try {
+    const ai = getAIClient();
     const agent = agentId ? AGENTS.find(a => a.id === agentId) : null;
-    const systemInstructionContent = agent 
+    let systemInstructionContent = agent 
       ? agent.systemInstruction 
-      : "Você é o núcleo do OmniAI OS, um sistema extremamente avançado de produtividade e IA. Sua missão é fornecer respostas estruturadas, úteis e de alta performance.";
+      : `Você é o AI ORCHESTRATOR do *OmniAI OS Supreme*. Sua função não é apenas responder, mas atuar como Cérebro Central. 
+Diretrizes do Orchestrator:
+1. ENTENDA: Analise a intenção oculta do usuário e os objetivos de negócio.
+2. PLANEJE: Quebre o problema em etapas acionáveis.
+3. CONVOQUE: Simule múltiplos agentes (ex: CEO para estratégia, Marketing para viralidade, Analyst para risco) debatendo internamente para chegar à resposta final.
+4. EXECUTE: Forneça um plano de ação tangível, templates, ou execuções reais.
+Sempre organize sua resposta em tópicos claros, e adicione uma seção 'Próximos Passos'.`;
+
+    if (toolId.includes('mission')) {
+       systemInstructionContent += "\nMODO MISSÃO: Crie sub-tarefas claras, métricas de sucesso, e um plano em 30-60-90 dias.";
+    }
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: `${systemInstructionContent} Adicionalmente, você deve fornecer uma resposta estruturada contendo o conteúdo principal em Markdown e três métricas (0-100): Qualidade, Potencial de Lucro e Nível de Risco.`,
+        systemInstruction: `${systemInstructionContent} Em seguida, retorne um log estruturado na chave 'content' (em Markdown) e a análise em 'score' (Métricas de 0 a 100).`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            content: { type: Type.STRING, description: "O conteúdo principal da resposta formatado em Markdown" },
+            content: { type: Type.STRING, description: "Plano de ação formadado em Markdown elegante e denso." },
             score: {
               type: Type.OBJECT,
               properties: {
-                quality: { type: Type.NUMBER },
-                profitPotential: { type: Type.NUMBER },
-                riskLevel: { type: Type.NUMBER }
+                quality: { type: Type.NUMBER, description: "Nível de sofisticação 0-100" },
+                profitPotential: { type: Type.NUMBER, description: "Potencial de lucro 0-100" },
+                riskLevel: { type: Type.NUMBER, description: "Nível de risco (baixo risco = menor valor)" }
               },
               required: ["quality", "profitPotential", "riskLevel"]
             }
