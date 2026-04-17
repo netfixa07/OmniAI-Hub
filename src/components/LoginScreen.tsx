@@ -1,15 +1,24 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, Mail, Lock } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface LoginScreenProps {
-  onLogin: () => void;
+  onLogin: (email: string, password: string, isSignUp: boolean) => void;
   isLoading: boolean;
   error?: string | null;
 }
 
 export function LoginScreen({ onLogin, isLoading, error }: LoginScreenProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    onLogin(email, password, isSignUp);
+  };
   return (
     <div className="min-h-screen bg-dashboard-bg flex items-center justify-center p-4 overflow-hidden relative">
       {/* Background blobs */}
@@ -31,41 +40,68 @@ export function LoginScreen({ onLogin, isLoading, error }: LoginScreenProps) {
             <p className="text-zinc-400">Sua plataforma all-in-one de inteligência artificial.</p>
           </div>
 
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-4 rounded-xl font-medium text-center">
                 {error}
               </div>
             )}
             
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Seu melhor e-mail" 
+                className="w-full bg-zinc-900 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-primary/50 transition-all shadow-inner"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Sua senha secreta" 
+                className="w-full bg-zinc-900 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-primary/50 transition-all shadow-inner"
+                required
+                minLength={6}
+              />
+            </div>
+
             <button
-              onClick={onLogin}
-              disabled={isLoading}
+              type="submit"
+              disabled={isLoading || !email || !password}
               className={cn(
                 "w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-3 transition-all",
-                "bg-white text-black hover:bg-zinc-200 active:scale-95 shadow-lg",
-                isLoading && "opacity-50 cursor-not-allowed"
+                "bg-linear-to-r from-brand-primary to-brand-secondary text-white hover:opacity-90 active:scale-95 shadow-lg shadow-brand-primary/20",
+                (isLoading || !email || !password) && "opacity-50 cursor-not-allowed"
               )}
             >
-              <img 
-                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" 
-                alt="Google" 
-                className="w-5 h-5"
-                referrerPolicy="no-referrer"
-              />
-              {isLoading ? 'Iniciando sessão...' : 'Entrar com Google'}
+              {isLoading ? 'Autenticando...' : (isSignUp ? 'Criar minha conta' : 'Acessar OmniAI')}
             </button>
 
-            <div className="flex items-center gap-4 py-2">
+            <button
+              type="button"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="w-full text-center text-xs text-brand-primary hover:text-brand-secondary transition-colors font-bold mt-2"
+            >
+              {isSignUp ? 'Já tem uma conta? Entre aqui' : 'Não tem conta? Crie grátis'}
+            </button>
+
+            <div className="flex items-center gap-4 py-2 mt-4">
               <div className="h-px bg-card-border flex-1" />
-              <span className="text-[10px] uppercase font-bold text-zinc-600 tracking-widest">Acesso seguro</span>
+              <span className="text-[10px] uppercase font-bold text-zinc-600 tracking-widest">Plataforma Segura</span>
               <div className="h-px bg-card-border flex-1" />
             </div>
 
             <p className="text-[10px] text-center text-zinc-500 uppercase tracking-widest font-semibold leading-relaxed">
               Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade.
             </p>
-          </div>
+          </form>
         </div>
 
         <motion.div

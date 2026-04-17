@@ -1,25 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut,
-  User as FirebaseUser 
-} from 'firebase/auth';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  collection, 
-  query, 
-  where, 
-  orderBy, 
-  onSnapshot, 
-  addDoc,
-  serverTimestamp 
-} from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { User as SupabaseUser } from '@supabase/supabase-js';
+import { supabase } from './lib/supabase';
 import { UserProfile, GenerationLog, Tool, Plan, AIScore, AIAgent, Workflow } from './types';
 import { TOOLS, CATEGORIES, AGENTS, WORKFLOWS } from './constants';
 import { Sidebar } from './components/Sidebar';
@@ -58,7 +39,7 @@ enum OperationType {
 }
 
 export default function App() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,117 +58,140 @@ export default function App() {
 
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+  const handleDatabaseError = (error: unknown, operationType: OperationType, path: string | null) => {
+    let errorMessage = String(error);
+    if (error && typeof error === 'object') {
+      if ('message' in error) {
+        errorMessage = String((error as any).message);
+        if ('details' in error) errorMessage += ` | Details: ${(error as any).details}`;
+        if ('hint' in error) errorMessage += ` | Hint: ${(error as any).hint}`;
+      } else {
+        try { errorMessage = JSON.stringify(error); } catch (e) {}
+      }
+    } else if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+
     const errInfo = {
-      error: error instanceof Error ? error.message : String(error),
+      error: errorMessage,
       authInfo: {
-        userId: auth.currentUser?.uid,
-        email: auth.currentUser?.email,
-        emailVerified: auth.currentUser?.emailVerified,
-        isAnonymous: auth.currentUser?.isAnonymous,
-        tenantId: auth.currentUser?.tenantId,
-        providerInfo: auth.currentUser?.providerData.map(provider => ({
-          providerId: provider.providerId,
-          displayName: provider.displayName,
-          email: provider.email,
-          photoUrl: provider.photoURL
-        })) || []
+        userId: user?.id,
+        email: user?.email,
       },
       operationType,
       path
     };
-    console.error('Firestore Error: ', JSON.stringify(errInfo));
-    throw new Error(JSON.stringify(errInfo));
+    console.error('Supabase Error: ', JSON.stringify(errInfo));
   };
+
+  // Supabase Connection Test
+  useEffect(() => {
+    async function testSupabase() {
+      try {
+        // Simple query just to check if the connection to the project works
+        const { error } = await supabase.from('_non_existent_table_just_for_ping_').select('*').limit(1);
+        
+        // Supabase will throw a standard error indicating the table doesn't exist, which means the connection IS working.
+        if (error) {
+           const isTableNotFound = error.code === '42P01' || error.code === 'PGRST116' || (error.message && error.message.includes('schema cache'));
+           if (!isTableNotFound) {
+               console.warn("Supabase connection issue:", error.message);
+           } else {
+               console.log("✅ Supabase conectado com sucesso!");
+           }
+        }
+      } catch (err) {
+        console.error("Falha ao comunicar com Supabase:", err);
+      }
+    }
+    testSupabase();
+  }, []);
 
   // Auth Listener
   useEffect(() => {
-    return onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setIsAuthReady(true);
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsAuthReady(true);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Profile Listener
+  // Profile and Usage Loader
   useEffect(() => {
     if (!user) {
       setProfile(null);
       return;
     }
 
-    const unsub = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as UserProfile;
+    const fetchProfile = async () => {
+      try {
+        const { data, error } = await supabase.rpc('sync_profile');
         
-        // Reset daily limit if needed
-        const today = new Date().toISOString().split('T')[0];
-        const lastGenDay = data.lastGenerationDate ? data.lastGenerationDate.split('T')[0] : '';
-        
-        if (lastGenDay !== today) {
-          const path = `users/${user.uid}`;
-          updateDoc(doc(db, 'users', user.uid), {
-            generationsLeft: data.plan === 'pro' ? 999 : FREE_DAILY_LIMIT,
-            lastGenerationDate: new Date().toISOString()
-          }).catch(e => handleFirestoreError(e, OperationType.UPDATE, path));
+        if (error) {
+          handleDatabaseError(error, OperationType.GET, 'users');
+          return;
         }
-        
-        setProfile(data);
-      } else {
-        // Initialize new user
-        const newProfile: UserProfile = {
-          uid: user.uid,
-          email: user.email!,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
-          plan: 'free',
-          generationsLeft: FREE_DAILY_LIMIT,
-          totalGenerations: 0,
-          lastGenerationDate: new Date().toISOString(),
-          createdAt: new Date().toISOString()
-        };
-        const path = `users/${user.uid}`;
-        setDoc(doc(db, 'users', user.uid), newProfile)
-          .catch(e => handleFirestoreError(e, OperationType.WRITE, path));
-        setProfile(newProfile);
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
-    });
 
-    return unsub;
+        if (data && data.length > 0) {
+          setProfile(data[0] as UserProfile);
+        }
+      } catch (err) {
+        handleDatabaseError(err, OperationType.GET, 'users');
+      }
+    };
+    fetchProfile();
   }, [user]);
 
   // History Listener
   useEffect(() => {
     if (!user) return;
 
-    const q = query(
-      collection(db, 'generations'),
-      where('uid', '==', user.uid),
-      orderBy('createdAt', 'desc')
-    );
+    const fetchHistory = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('generations')
+          .select('*')
+          .eq('uid', user.id)
+          .order('createdAt', { ascending: false });
+          
+        if (error) {
+          handleDatabaseError(error, OperationType.GET, 'generations');
+        } else if (data) {
+          setHistory(data as GenerationLog[]);
+        }
+      } finally {
+        setIsHistoryLoading(false);
+      }
+    };
 
-    return onSnapshot(q, (snapshot) => {
-      setHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GenerationLog)));
-      setIsHistoryLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, 'generations');
-      setIsHistoryLoading(false);
-    });
+    fetchHistory();
   }, [user]);
 
-  const handleLogin = async () => {
+  const handleLogin = async (email: string, password: string, isSignUp: boolean) => {
     setIsLoading(true);
     setLoginError(null);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      if (isSignUp) {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
     } catch (error: any) {
       console.error("Login failed:", error);
-      if (error?.code === 'auth/unauthorized-domain') {
-        setLoginError("Domínio não autorizado. Acesse o console do Firebase (Authentication > Settings > Authorized domains) e adicione o domínio atual da URL. Se estiver no preview, tente abrir em uma nova guia.");
-      } else if (error?.code === 'auth/popup-blocked' || error?.message?.includes("Cross-Origin")) {
-        setLoginError("Login bloqueado pelo navegador. Abra o app em uma NOVA GUIA e tente novamente.");
+      if (error?.message?.includes('already registered')) {
+        setLoginError("Este e-mail já está em uso por outra conta.");
+      } else if (error?.message?.includes('Invalid login credentials')) {
+        setLoginError("E-mail ou senha incorretos.");
+      } else if (error?.message?.includes('Password should be at least')) {
+        setLoginError("A senha deve ter pelo menos 6 caracteres.");
       } else {
         setLoginError(`Falha ao conectar: ${error?.message || error.toString()}`);
       }
@@ -196,25 +200,31 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => signOut(auth);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   const handleGenerate = async (finalPrompt: string, agentId?: string) => {
-    if (!profile || profile.generationsLeft <= 0) {
+    if (!profile || profile.generationsLeft <= 0 || !user) {
       throw new Error("Limite atingido");
     }
 
     setIsGenerating(true);
     try {
+      // 1. Debita o crédito com autoridade total usando o banco de dados (RPC Backend)
+      const { data: allowed, error: limitError } = await supabase.rpc('consume_generation', { p_tool_id: selectedTool!.id });
+      if (limitError || !allowed) {
+        throw new Error("Seu limite de crédito diário para ferramentas foi atingido.");
+      }
+
+      // 2. Após o débito real, podemos consultar a resposta
       const response = await generateAIResponse(finalPrompt, selectedTool!.id, agentId);
       
-      // Update usage
-      const path = `users/${user!.uid}`;
-      await updateDoc(doc(db, 'users', user!.uid), {
-        generationsLeft: profile.generationsLeft - 1,
-        totalGenerations: profile.totalGenerations + 1,
-        lastGenerationDate: new Date().toISOString(),
-        [`usageStats.${selectedTool!.id}`]: (profile.usageStats?.[selectedTool!.id] || 0) + 1
-      }).catch(e => handleFirestoreError(e, OperationType.UPDATE, path));
+      // 3. Atualiza a interface silenciosamente com os novos dados frescos e seguros do DB
+      const { data: profileData } = await supabase.rpc('sync_profile');
+      if (profileData && profileData.length > 0) {
+        setProfile(profileData[0] as UserProfile);
+      }
 
       return response;
     } finally {
@@ -226,8 +236,8 @@ export default function App() {
     if (!user || !selectedTool) return;
 
     try {
-      await addDoc(collection(db, 'generations'), {
-        uid: user.uid,
+      const newLog = {
+        uid: user.id,
         toolId: selectedTool.id,
         toolType: selectedTool.category,
         toolName: selectedTool.name,
@@ -236,12 +246,20 @@ export default function App() {
         score,
         agentId,
         createdAt: new Date().toISOString()
-      });
+      };
+      
+      const { data, error } = await supabase.from('generations').insert([newLog]).select();
+      
+      if (error) throw error;
+      
+      // Update local history
+      if (data && data[0]) {
+        setHistory(prev => [data[0] as GenerationLog, ...prev]);
+      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, 'generations');
+      handleDatabaseError(error, OperationType.WRITE, 'generations');
     }
 
-    // If in workflow, move to next step
     if (activeWorkflow) {
       if (currentWorkflowStep < activeWorkflow.steps.length - 1) {
         // We stay in the modal but let user know they can proceed
