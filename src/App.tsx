@@ -643,12 +643,14 @@ export default function App() {
                             Análise de Scores Ilimitada
                           </li>
                         </ul>
-                        <button 
-                          onClick={() => alert("Checkout Stripe Simulado...")}
-                          className="mt-auto w-full py-4 bg-linear-to-r from-brand-primary to-brand-secondary text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brand-primary/20"
+                        <a 
+                          href="https://pay.cakto.com.br/kbusidc_853388"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-auto w-full py-4 bg-linear-to-r from-brand-primary to-brand-secondary text-white rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brand-primary/20 block text-center"
                         >
                           Ativar Modo PRO
-                        </button>
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -676,7 +678,7 @@ export default function App() {
                           </li>
                         </ul>
                         <a 
-                          href="https://wa.me/5564996768385"
+                          href="https://pay.cakto.com.br/zhgzgkh_853403"
                           target="_blank"
                           rel="noopener noreferrer"
                           className="mt-auto w-full py-4 bg-white text-black rounded-2xl font-bold hover:bg-zinc-100 transition-all shadow-xl block text-center"
