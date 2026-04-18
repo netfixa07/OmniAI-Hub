@@ -1,7 +1,7 @@
 import React from 'react';
 import { CATEGORIES } from '../constants';
 import { cn } from '../lib/utils';
-import { Sparkles, History, CreditCard, LogOut, User, Workflow, Layout, ShieldCheck } from 'lucide-react';
+import { Sparkles, History, CreditCard, LogOut, User, Workflow, Layout, ShieldCheck, X } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface SidebarProps {
@@ -11,6 +11,8 @@ interface SidebarProps {
   setCurrentPage: (page: 'dashboard' | 'flows' | 'history' | 'billing') => void;
   user: UserProfile | null;
   onLogout: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export function Sidebar({ 
@@ -19,20 +21,43 @@ export function Sidebar({
   currentPage, 
   setCurrentPage,
   user,
-  onLogout 
+  onLogout,
+  isOpen = false,
+  onClose
 }: SidebarProps) {
   return (
-    <aside className="w-64 border-r border-card-border bg-dashboard-bg flex flex-col h-screen sticky top-0 overflow-y-auto">
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 rounded-lg bg-linear-to-br from-brand-primary to-brand-secondary flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-            <Layout className="text-white w-5 h-5" />
+    <>
+      {/* Mobile Backdrop */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 w-72 lg:w-64 border-r border-card-border bg-dashboard-bg flex flex-col h-screen transition-transform duration-300 lg:relative lg:translate-x-0 overflow-y-auto",
+        isOpen ? "translate-x-0 shadow-2xl shadow-brand-primary/20" : "-translate-x-full"
+      )}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-8 lg:block">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-linear-to-br from-brand-primary to-brand-secondary flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+                <Layout className="text-white w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="font-display font-bold text-lg tracking-tight leading-none">OmniAI OS</h1>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-secondary">Supreme Edition</span>
+              </div>
+            </div>
+            
+            <button 
+              onClick={onClose}
+              className="p-2 hover:bg-white/5 rounded-full text-zinc-500 hover:text-white lg:hidden"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
-          <div>
-            <h1 className="font-display font-bold text-lg tracking-tight leading-none">OmniAI OS</h1>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-secondary">Supreme Edition</span>
-          </div>
-        </div>
 
         <nav className="space-y-1">
           <button
@@ -96,7 +121,7 @@ export function Sidebar({
                   )}
                 >
                   {cat.icon}
-                  {cat.name}
+                  <span className="truncate">{cat.name}</span>
                 </button>
               ))}
             </div>
@@ -104,40 +129,49 @@ export function Sidebar({
         )}
       </div>
 
-      <div className="mt-auto p-4 border-t border-card-border">
+      <div className="mt-auto p-4 border-t border-card-border bg-white/[0.01]">
         {user && (
-          <>
-            <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-zinc-800 overflow-hidden border border-white/10">
-                {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName || 'User'} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                ) : (
-                  <User className="w-full h-full p-1.5 text-zinc-400" />
-                )}
+          <div className="space-y-4">
+            <div className="bg-linear-to-br from-brand-primary/10 to-transparent p-4 rounded-2xl border border-brand-primary/10">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="bg-brand-primary/20 p-2 rounded-xl">
+                  <ShieldCheck className="w-4 h-4 text-brand-primary" />
+                </div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-300">Perfil Supreme</p>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.displayName || 'Usuário'}</p>
-                <div className="flex items-center gap-1.5">
-                  <span className={cn(
-                    "text-[10px] uppercase font-bold px-1.5 py-0.5 rounded",
-                    user.plan === 'pro' ? "bg-amber-500/20 text-amber-500" : "bg-zinc-700 text-zinc-400"
-                  )}>
-                    {user.plan}
-                  </span>
-                  <span className="text-[10px] text-zinc-500">{user.generationsLeft} rest.</span>
+              
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-full bg-zinc-800 overflow-hidden border border-white/10 shrink-0">
+                  <User className="w-full h-full p-2 text-zinc-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold truncate">{user.displayName || 'Usuário'}</p>
+                  <p className="text-[10px] text-zinc-500 uppercase font-bold truncate">{user.plan || 'Free Account'}</p>
                 </div>
               </div>
+
+              <div className="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-brand-primary transition-all duration-1000" 
+                  style={{ width: `${Math.min(((user?.generationsLeft || 0) / (user?.totalGenerations || 5)) * 100, 100)}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-zinc-500 mt-2 font-bold uppercase">
+                {user?.generationsLeft} / {user?.totalGenerations || 5} Créditos
+              </p>
             </div>
+
             <button
               onClick={onLogout}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-red-400 hover:bg-red-400/5 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:text-red-400 hover:bg-red-400/5 transition-colors"
             >
               <LogOut className="w-4 h-4" />
-              Sair
+              Sair do Sistema
             </button>
-          </>
+          </div>
         )}
       </div>
     </aside>
+    </>
   );
 }

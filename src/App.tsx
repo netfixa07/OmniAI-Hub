@@ -24,7 +24,8 @@ import {
   Workflow as WorkflowIcon,
   Sparkles,
   ShieldCheck,
-  Zap
+  Zap,
+  Menu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -58,6 +59,7 @@ export default function App() {
   const [currentWorkflowStep, setCurrentWorkflowStep] = useState(0);
 
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleDatabaseError = (error: unknown, operationType: OperationType, path: string | null) => {
     let errorMessage = String(error);
@@ -299,31 +301,41 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-dashboard-bg flex">
+    <div className="min-h-screen bg-dashboard-bg flex overflow-hidden">
       <Sidebar 
         activeCategory={activeCategory}
-        setActiveCategory={(id) => { setActiveCategory(id); setCurrentPage('dashboard'); }}
+        setActiveCategory={(id) => { setActiveCategory(id); setCurrentPage('dashboard'); setIsSidebarOpen(false); }}
         currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
+        setCurrentPage={(page) => { setCurrentPage(page); setIsSidebarOpen(false); }}
         user={profile}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
 
-      <main className="flex-1 flex flex-col h-screen overflow-hidden overflow-y-auto">
-        <header className="sticky top-0 z-20 bg-dashboard-bg/80 backdrop-blur-md border-b border-card-border p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-display font-bold">
-              {currentPage === 'dashboard' && (activeCategory === 'all' ? 'Dashboard Inteligente' : CATEGORIES.find(c => c.id === activeCategory)?.name)}
-              {currentPage === 'flows' && 'Fluxos de Trabalho'}
-              {currentPage === 'history' && 'Memória de Sistema'}
-              {currentPage === 'billing' && 'Planos de Alta Performance'}
-            </h2>
-            <p className="text-sm text-zinc-500">
-              {currentPage === 'dashboard' && `Olá, ${profile?.displayName || 'Usuário'}. Sistema operacional de IA pronto.`}
-              {currentPage === 'flows' && 'Siga sequências automatizadas para escalar seus resultados.'}
-              {currentPage === 'history' && 'Acesso rápido a todo o contexto gerado anteriormente.'}
-              {currentPage === 'billing' && 'Desbloqueie o potencial máximo do OmniAI OS.'}
-            </p>
+      <main className="flex-1 flex flex-col h-screen overflow-hidden overflow-y-auto w-full">
+        <header className="sticky top-0 z-20 bg-dashboard-bg/80 backdrop-blur-md border-b border-card-border p-4 sm:p-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 hover:bg-white/5 rounded-xl lg:hidden text-zinc-400 hover:text-white transition-colors"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-2xl font-display font-bold truncate">
+                {currentPage === 'dashboard' && (activeCategory === 'all' ? 'Dashboard Inteligente' : CATEGORIES.find(c => c.id === activeCategory)?.name)}
+                {currentPage === 'flows' && 'Fluxos de Trabalho'}
+                {currentPage === 'history' && 'Memória de Sistema'}
+                {currentPage === 'billing' && 'Planos de Alta Performance'}
+              </h2>
+              <p className="text-[10px] sm:text-sm text-zinc-500 truncate">
+                {currentPage === 'dashboard' && `Olá, ${profile?.displayName || 'Usuário'}. Sistema operacional de IA pronto.`}
+                {currentPage === 'flows' && 'Siga sequências automatizadas para escalar seus resultados.'}
+                {currentPage === 'history' && 'Acesso rápido a todo o contexto gerado anteriormente.'}
+                {currentPage === 'billing' && 'Desbloqueie o potencial máximo do OmniAI OS.'}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
@@ -340,16 +352,16 @@ export default function App() {
             {profile?.plan === 'free' && (
               <button 
                 onClick={() => setCurrentPage('billing')}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl text-sm font-bold animate-pulse hover:animate-none transition-all"
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-xl text-sm font-bold animate-pulse hover:animate-none transition-all shadow-lg shadow-amber-500/10"
               >
                 <Crown className="w-4 h-4 fill-current" />
-                Upgrade PRO
+                <span className="hidden sm:inline">Upgrade PRO</span>
               </button>
             )}
           </div>
         </header>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           <AnimatePresence mode="wait">
             {currentPage === 'dashboard' && (
               <motion.div 
@@ -361,15 +373,15 @@ export default function App() {
               >
                 {/* Stats Header */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-3 bg-linear-to-r from-zinc-900 to-black border border-white/10 p-8 rounded-[40px] relative overflow-hidden group shadow-2xl">
+                  <div className="md:col-span-3 bg-linear-to-r from-zinc-900 to-black border border-white/10 p-6 sm:p-8 rounded-[32px] sm:rounded-[40px] relative overflow-hidden group shadow-2xl">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-brand-primary opacity-5 rounded-full blur-[100px] group-hover:opacity-10 transition-opacity"></div>
                     <div className="relative z-10 flex flex-col gap-6 font-display">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
-                           <Brain className="w-6 h-6 text-brand-primary animate-pulse" />
-                           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-zinc-400">AI Orchestrator (Cérebro Central)</h2>
+                           <Brain className="w-6 h-6 text-brand-primary animate-pulse shrink-0" />
+                           <h2 className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-white to-zinc-400">AI Orchestrator (Cérebro Central)</h2>
                         </div>
-                        <p className="text-zinc-500 font-sans">O que você deseja conquistar? Digite seu objetivo e deixe o sistema de multi-agentes criar a estratégia, executar as tarefas e simular o lucro.</p>
+                        <p className="text-sm sm:text-base text-zinc-500 font-sans">O que você deseja conquistar? Digite seu objetivo e deixe o sistema de multi-agentes criar a estratégia.</p>
                       </div>
                       
                       <form onSubmit={(e) => {
@@ -380,19 +392,18 @@ export default function App() {
                           const missionTool = TOOLS.find(t => t.id === 'mission_mode');
                           if(missionTool) {
                              setSelectedTool(missionTool);
-                             // To auto-execute we would need a ref or state trick, for now opening modal is fine
                           }
                         }
-                      }} className="relative">
+                      }} className="relative flex flex-col sm:block">
                         <input 
                           name="orchestratorQuery"
                           type="text" 
-                          placeholder="Ex: Quero criar um SaaS em 30 dias que me gere R$5k/mês" 
-                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-6 pr-32 py-5 text-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:bg-white/10 transition-all text-white placeholder:text-zinc-600 font-sans shadow-inner"
+                          placeholder="Ex: Quero criar um SaaS em 30 dias..." 
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl pl-6 pr-6 sm:pr-32 py-4 sm:py-5 text-base sm:text-lg focus:outline-none focus:ring-2 focus:ring-brand-primary focus:bg-white/10 transition-all text-white placeholder:text-zinc-600 font-sans shadow-inner"
                         />
-                        <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 bg-brand-primary hover:bg-brand-secondary text-white px-6 py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-brand-primary/20 flex items-center gap-2">
+                        <button type="submit" className="mt-4 sm:mt-0 sm:absolute sm:right-3 sm:top-1/2 sm:-translate-y-1/2 bg-brand-primary hover:bg-brand-secondary text-white px-6 py-4 sm:py-3 rounded-xl font-bold text-sm transition-all shadow-lg shadow-brand-primary/20 flex items-center justify-center gap-2">
                           <Zap className="w-4 h-4" />
-                          INICIAR
+                          INICIAR MISSÃO
                         </button>
                       </form>
                     </div>
@@ -751,18 +762,22 @@ export default function App() {
         </div>
       </main>
 
-      <GenerationModal 
-        tool={selectedTool}
-        onClose={() => {
-          setSelectedTool(null);
-          setViewingHistoryResult(undefined);
-        }}
-        onGenerate={handleGenerate}
-        onSave={handleSaveGeneration}
-        isGenerating={isGenerating}
-        canGenerate={(profile?.generationsLeft || 0) > 0}
-        viewingResult={viewingHistoryResult}
-      />
+      <AnimatePresence>
+        {selectedTool && (
+          <GenerationModal 
+            tool={selectedTool}
+            onClose={() => {
+              setSelectedTool(null);
+              setViewingHistoryResult(undefined);
+            }}
+            onGenerate={handleGenerate}
+            onSave={handleSaveGeneration}
+            isGenerating={isGenerating}
+            canGenerate={(profile?.generationsLeft || 0) > 0}
+            viewingResult={viewingHistoryResult}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

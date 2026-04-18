@@ -91,9 +91,9 @@ Algoritmos de precificação dinâmica e análise de sentimento dominarão o e-c
       setResult(res.content);
       setScore(res.score);
       onSave(input, res.content, res.score, selectedAgentId);
-    } catch (e) {
+    } catch (e: any) {
       clearInterval(interval);
-      setError("Ocorreu um erro ao gerar. Tente novamente.");
+      setError(e?.message || "Ocorreu um erro ao gerar. Tente novamente.");
     } finally {
       clearInterval(interval);
     }
@@ -107,51 +107,64 @@ Algoritmos de precificação dinâmica e análise de sentimento dominarão o e-c
   };
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+      />
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-card-bg border border-card-border rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
-        >
-          {/* Header */}
-          <div className="p-6 border-b border-card-border flex items-center justify-between bg-white/[0.02]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary">
-                {tool.icon}
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-xl">{tool.name}</h2>
-                <p className="text-xs text-zinc-500 uppercase tracking-widest font-semibold">{tool.category}</p>
-              </div>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative w-full max-w-2xl bg-card-bg border border-card-border rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+      >
+        {/* Header */}
+        <div className="p-6 border-b border-card-border flex items-center justify-between bg-white/[0.02]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-primary/10 flex items-center justify-center text-brand-primary">
+              {tool.icon}
             </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-400 hover:text-white"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div>
+              <h2 className="font-display font-bold text-xl">{tool.name}</h2>
+              <p className="text-xs text-zinc-500 uppercase tracking-widest font-semibold">{tool.category}</p>
+            </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-400 hover:text-white"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* Body */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {!result ? (
-              <div className="space-y-6">
-                <div className="space-y-3">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3"
+            >
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-bold text-red-500">Erro de Processamento</p>
+                <p className="text-xs text-red-400/80 mt-1">{error}</p>
+              </div>
+            </motion.div>
+          )}
+
+          {!result ? (
+            <div className="space-y-6">
+              <div className="space-y-3">
                   <label className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
                     <Bot className="w-3 h-3" />
                     Escolha seu Agente Especialista
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {AGENTS.map((agent) => (
                       <button
                         key={agent.id}
@@ -277,8 +290,7 @@ Algoritmos de precificação dinâmica e análise de sentimento dominarão o e-c
               </p>
             </div>
           )}
-        </motion.div>
-      </div>
-    </AnimatePresence>
+      </motion.div>
+    </div>
   );
 }
