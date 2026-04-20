@@ -1,20 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { AGENTS } from "../constants";
-
-let aiClient: GoogleGenAI | null = null;
-
-function getAIClient() {
-  if (!aiClient) {
-    const apiKey = process.env.GEMINI_API_KEY || "";
-    aiClient = new GoogleGenAI({ apiKey });
-  }
-  return aiClient;
-}
 
 export async function generateAIResponse(prompt: string, toolId: string, agentId?: string) {
   try {
-    const ai = getAIClient();
-    
     const agent = agentId ? AGENTS.find(a => a.id === agentId) : null;
     let systemInstructionContent = agent 
       ? agent.systemInstruction 
@@ -33,14 +20,26 @@ Sempre finalize com uma seção de 'Insights de Escala' e 'Roadmap de Curto Praz
     // Usando estrutura recomendada pela skill gemini-api
     const finalPrompt = `CONTEXTO DO SISTEMA: ${systemInstructionContent}\n\nSOLICITAÇÃO DO USUÁRIO: ${prompt}\n\nResponda estritamente em JSON: { "content": "Markdown", "score": { "quality": 100, "profitPotential": 100, "riskLevel": 100 } }`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // Modelo recomendado e estável
-      contents: finalPrompt,
-      config: {
-        responseMimeType: "application/json"
-      }
+    const requestBody = { finalPrompt };
+    
+    const backendResponse = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
     });
 
+    if (!backendResponse.ok) {
+       let errMessage = "Internal Server Error";
+       try {
+         const errData = await backendResponse.json();
+         errMessage = errData.error || errMessage;
+       } catch(e) {}
+       throw new Error(errMessage);
+    }
+
+    const response = await backendResponse.json();
     const text = response.text || "";
 
     let parsed: any;

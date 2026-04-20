@@ -2,9 +2,20 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { GoogleGenAI } from '@google/genai';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+let aiClient: GoogleGenAI | null = null;
+function getAIClient() {
+  if (!aiClient) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("API key is missing in backend environment.");
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 async function startServer() {
   const app = express();
@@ -16,6 +27,26 @@ async function startServer() {
   // API Routes
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  app.post('/api/generate', async (req, res) => {
+    try {
+      const { finalPrompt } = req.body;
+      if (!finalPrompt) return res.status(400).json({ error: "Missing finalPrompt" });
+      
+      const ai = getAIClient();
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview", 
+        contents: finalPrompt,
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+      res.json({ text: response.text });
+    } catch (err: any) {
+      console.error("Backend GenAI Error:", err);
+      res.status(500).json({ error: err.message || "Internal Server Error" });
+    }
   });
 
   // Vite integration
