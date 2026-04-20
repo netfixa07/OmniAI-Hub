@@ -87,29 +87,6 @@ export default function App() {
     console.error('Supabase Error: ', JSON.stringify(errInfo));
   };
 
-  // Supabase Connection Test
-  useEffect(() => {
-    async function testSupabase() {
-      try {
-        // Simple query just to check if the connection to the project works
-        const { error } = await supabase.from('_non_existent_table_just_for_ping_').select('*').limit(1);
-        
-        // Supabase will throw a standard error indicating the table doesn't exist, which means the connection IS working.
-        if (error) {
-           const isTableNotFound = error.code === '42P01' || error.code === 'PGRST116' || (error.message && error.message.includes('schema cache'));
-           if (!isTableNotFound) {
-               console.warn("Supabase connection issue:", error.message);
-           } else {
-               console.log("✅ Supabase conectado com sucesso!");
-           }
-        }
-      } catch (err) {
-        console.error("Falha ao comunicar com Supabase:", err);
-      }
-    }
-    testSupabase();
-  }, []);
-
   // Auth Listener
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {

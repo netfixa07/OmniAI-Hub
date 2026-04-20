@@ -36,8 +36,8 @@ export function LoginScreen({ onLogin, isLoading, error }: LoginScreenProps) {
             <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-brand-primary to-brand-secondary flex items-center justify-center mb-6 shadow-xl shadow-brand-primary/20">
               <Sparkles className="text-white w-10 h-10 fill-current" />
             </div>
-            <h1 className="font-display font-bold text-4xl mb-2 tracking-tight">OmniAI Hub</h1>
-            <p className="text-zinc-400">Sua plataforma all-in-one de inteligência artificial.</p>
+            <h1 className="font-display font-bold text-4xl mb-2 tracking-tight">OmniAI OS Supreme</h1>
+            <p className="text-zinc-400">Sua plataforma primária de inteligência artificial corporativa.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
