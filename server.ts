@@ -29,14 +29,25 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
+  app.get('/api/debug-env', (req, res) => {
+    const key = process.env.GEMINI_API_KEY;
+    res.json({ key_exists: !!key, key_start: key ? key.slice(0, 5) : null, key_len: key ? key.length : 0 });
+  });
+
   app.post('/api/generate', async (req, res) => {
     try {
+      if (process.env.GEMINI_API_KEY === 'MY_GEMINI_API_KEY' || !process.env.GEMINI_API_KEY) {
+        return res.status(400).json({
+          error: 'Configuração Incorreta: Você salvou a chave "MY_GEMINI_API_KEY" nas variáveis de ambiente. Por favor, vá em "Settings > Secrets" (Configurações > Segredos), APAGUE o segredo "GEMINI_API_KEY" e reinicie a página. O sistema providenciará uma chave gratuita automaticamente.'
+        });
+      }
+
       const { finalPrompt } = req.body;
       if (!finalPrompt) return res.status(400).json({ error: "Missing finalPrompt" });
       
       const ai = getAIClient();
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", 
+        model: "gemini-1.5-flash", 
         contents: finalPrompt,
         config: {
           responseMimeType: "application/json"
@@ -45,7 +56,7 @@ async function startServer() {
       res.json({ text: response.text });
     } catch (err: any) {
       console.error("Backend GenAI Error:", err);
-      res.status(500).json({ error: err.message || "Internal Server Error" });
+      res.status(500).json({ error: err?.message ? err.message : String(err) });
     }
   });
 
